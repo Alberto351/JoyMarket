@@ -1,14 +1,14 @@
 package controller;
 
+import dao.UserDAO;
 import model.User;
-import repository.UserDA;
 
 public class UserController {
 
-    private UserDA userDA;
+    private UserDAO userDAO;
 
     public UserController() {
-        userDA = new UserDA();
+        userDAO = new UserDAO();
     }
 
     public User login(String email, String password) {
@@ -23,7 +23,7 @@ public class UserController {
         }
 
         // Call DAO
-        User user = userDA.login(email, password);
+        User user = userDAO.login(email, password);
 
         // If not found → login failed
         if (user == null) {

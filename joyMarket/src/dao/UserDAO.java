@@ -1,4 +1,4 @@
-package repository;
+package dao;
 
 import database.Connect;
 import model.User;
@@ -9,7 +9,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class UserDA {
+public class UserDAO {
 
     private Connect connect = Connect.getInstance();
 
