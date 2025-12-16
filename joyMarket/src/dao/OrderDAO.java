@@ -1,7 +1,7 @@
 package dao;
 
-import database.Connect;
 import model.Order;
+import utils.Connect;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

@@ -1,9 +1,9 @@
 package dao;
 
-import database.Connect;
 import model.Cart;
 import model.CartItem;
 import model.Product;
+import utils.Connect;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -56,6 +56,46 @@ public class CartDAO {
 
         return cart;
     }
+    
+    // CHECK ITEM 
+    public boolean itemExists(String idUser, String idProduct) {
+        String query = "SELECT * FROM cart_items WHERE idUser = ? AND idProduct = ?";
+        PreparedStatement ps = connect.prepareStatement(query);
+
+        try {
+            ps.setString(1, idUser);
+            ps.setString(2, idProduct);
+            ResultSet rs = ps.executeQuery();
+            return rs.next();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    // GET TOTAL IN CART
+    public double getCartTotal(String idUser) {
+        String query = """
+            SELECT SUM(p.price * c.quantity) AS total
+            FROM cart_items c
+            JOIN products p ON c.idProduct = p.idProduct
+            WHERE c.idUser = ?
+        """;
+
+        PreparedStatement ps = connect.prepareStatement(query);
+
+        try {
+            ps.setString(1, idUser);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getDouble("total");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
 
     // ADD ITEM TO CART
     public boolean addToCart(String idUser, String idProduct, int quantity) {

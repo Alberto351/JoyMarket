@@ -1,7 +1,7 @@
 package dao;
 
-import database.Connect;
 import model.Product;
+import utils.Connect;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -76,6 +76,7 @@ public class ProductDAO {
         	ps.setInt(3, product.getStock());
         	ps.setString(4, product.getCategory());
         	ps.setString(5, product.getIdProduct());
+        	return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
         }
