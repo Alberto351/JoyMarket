@@ -11,6 +11,7 @@ import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import model.Cart;
 import model.CartItem;
+import model.Customer;
 import model.User;
 
 public class CartView extends MainView {
@@ -149,9 +150,45 @@ public class CartView extends MainView {
     }
 
     private void handleCheckout(Stage stage) {
-        cartController.clearCart(user);
-        alert("Checkout Successful! Thank you for your purchase.");
-        new CustomerMainView(stage, user).show();
+        if (!(user instanceof Customer)) {
+            alert("Only customers can perform checkout.");
+            return;
+        }
+
+        Customer customer = (Customer) user;
+        double totalCost = calculateTotal(FXCollections.observableArrayList(cartController.getCart(user).getItems()));
+
+        // 1. Check if user has enough balance
+        if (customer.getBalance() < totalCost) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Insufficient Balance");
+            alert.setHeaderText("Payment Failed");
+            alert.setContentText("You need $" + String.format("%.2f", totalCost - customer.getBalance()) + " more. Would you like to Top Up now?");
+            
+            ButtonType btnTopUp = new ButtonType("Go to Top Up");
+            ButtonType btnCancel = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+            alert.getButtonTypes().setAll(btnTopUp, btnCancel);
+
+            alert.showAndWait().ifPresent(type -> {
+                if (type == btnTopUp) {
+                    new TopUpView(stage, user).show();
+                }
+            });
+            return;
+        }
+
+        // 2. If balance is enough, proceed with transaction
+        // This part should technically deduct the balance in the database and clear the cart
+        boolean success = cartController.clearCart(user); // Or call an OrderController.processOrder
+        
+        if (success) {
+            // Deduct balance locally for the current session
+            customer.setBalance(customer.getBalance() - totalCost);
+            alert("Checkout Successful! Your new balance is: $" + String.format("%.2f", customer.getBalance()));
+            new CustomerMainView(stage, user).show();
+        } else {
+            alert("Transaction failed. Please try again later.");
+        }
     }
 
     private void alert(String message) {
