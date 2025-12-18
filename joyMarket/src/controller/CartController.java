@@ -19,18 +19,15 @@ public class CartController {
     /**
      * DOCX: Customer Add Product to Cart
      */
-    public boolean addToCart(User user, String idProduct, int count) {
+    public boolean addToCart(User user, Product product, int count) {
 
-        // Basic validation
-        if (user == null || idProduct == null) return false;
+        if (user == null || product == null) return false;
         if (count < 1) return false;
 
-        // Fetch product for stock validation
-        Product product = productDAO.getProductById(idProduct);
-        if (product == null) return false;
-
-        // DOCX rule: count must be within available stock
+        // Stock validation
         if (count > product.getStock()) return false;
+
+        String idProduct = product.getIdProduct();
 
         // If item already exists → update quantity
         if (cartDAO.itemExists(user.getIdUser(), idProduct)) {
@@ -48,6 +45,7 @@ public class CartController {
                 count
         );
     }
+
 
     // VIEW CART
     public Cart getCart(User user) {

@@ -1,5 +1,6 @@
 package view;
 
+import controller.CartController;
 import controller.ProductController;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -17,6 +18,8 @@ public class CustomerMainView extends MainView {
 
     private User user;
     private ProductController productController = new ProductController();
+    private CartController cartController = new CartController();
+
 
     public CustomerMainView(Stage stage, User user) {
         super(stage);
@@ -79,14 +82,80 @@ public class CustomerMainView extends MainView {
 
         HBox topBar = new HBox(10, lblWelcome, btnLogout);
         topBar.setPadding(new Insets(10));
+        
+        
+     // --- Bottom Bar: Selection and Navigation ---
+        TextField txtQty = new TextField();
+        txtQty.setPromptText("Qty");
+        txtQty.setPrefWidth(60);
 
-        // Root
+        Button btnAddToCart = new Button("Add to Cart");
+        Button btnViewCart = new Button("View Cart"); 
+
+        // Styling for a clean UI
+        btnAddToCart.setStyle("-fx-background-color: #2ecc71; -fx-text-fill: white; -fx-font-weight: bold;");
+        btnViewCart.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-font-weight: bold;");
+
+        HBox bottomBar = new HBox(10, new Label("Qty:"), txtQty, btnAddToCart, btnViewCart);
+        bottomBar.setPadding(new Insets(10));
+
+        // Navigation to CartView
+        btnViewCart.setOnAction(e -> {
+            new CartView(stage, user).show();
+        });
+
+        // Add to Cart Logic
+        btnAddToCart.setOnAction(e -> {
+            Product selected = table.getSelectionModel().getSelectedItem();
+            if (selected == null) {
+                alert("Please select a product from the table first.");
+                return;
+            }
+
+            try {
+                if (txtQty.getText().isEmpty()) {
+                    alert("Quantity must be filled.");
+                    return;
+                }
+                
+                int qty = Integer.parseInt(txtQty.getText());
+                
+                // Validation: Must be between 1 and available stock
+                if (qty < 1 || qty > selected.getStock()) {
+                    alert("Quantity must be between 1 and " + selected.getStock());
+                    return;
+                }
+
+                boolean success = cartController.addToCart(user, selected, qty);
+                if (success) {
+                    alert("Added " + qty + " " + selected.getName() + " to cart!");
+                    txtQty.clear();
+                    // Refresh table to show updated stock if necessary
+                    table.refresh();
+                } else {
+                    alert("Failed to add product.");
+                }
+            } catch (NumberFormatException ex) {
+                alert("Quantity must be numeric.");
+            }
+        });
+
+        // Layout setup
         BorderPane root = new BorderPane();
         root.setTop(topBar);
         root.setCenter(table);
+        root.setBottom(bottomBar); // Critical: ensures buttons appear
 
         stage.setScene(new Scene(root, 700, 400));
         stage.setTitle("JoymarKet - Customer");
         stage.show();
+    }
+    
+    private void alert(String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Information");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 }

@@ -99,9 +99,13 @@ public class CartDAO {
 
     // ADD ITEM TO CART
     public boolean addToCart(String idUser, String idProduct, int quantity) {
-        String query = "INSERT INTO cart_items VALUES (?, ?, ?)";
-        PreparedStatement ps = connect.prepareStatement(query);
+        String query = """
+            INSERT INTO cart_items (idUser, idProduct, quantity)
+            VALUES (?, ?, ?)
+        """;
 
+        PreparedStatement ps = connect.prepareStatement(query);
+        
         try {
             ps.setString(1, idUser);
             ps.setString(2, idProduct);
@@ -128,6 +132,30 @@ public class CartDAO {
         }
         return false;
     }
+    
+    // Get Quantity
+    
+    public int getQuantity(String idUser, String idProduct) {
+        String query = """
+            SELECT quantity FROM cart_items
+            WHERE idUser = ? AND idProduct = ?
+        """;
+
+        PreparedStatement ps = connect.prepareStatement(query);
+
+        try {
+            ps.setString(1, idUser);
+            ps.setString(2, idProduct);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("quantity");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
 
     // REMOVE ITEM FROM CART
     public boolean removeFromCart(String idUser, String idProduct) {

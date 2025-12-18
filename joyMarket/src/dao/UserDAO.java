@@ -16,7 +16,14 @@ public class UserDAO {
 
     // LOGIN
     public User login(String email, String password) {
-        String query = "SELECT * FROM users WHERE email = ? AND password = ?";
+
+        String query = """
+            SELECT u.*, c.balance, c.gender
+            FROM users u
+            LEFT JOIN customers c ON u.idUser = c.idUser
+            WHERE u.email = ? AND u.password = ?
+        """;
+
         PreparedStatement ps = connect.prepareStatement(query);
 
         try {
@@ -32,6 +39,7 @@ public class UserDAO {
         }
         return null;
     }
+
 
     // GET USERS BY ROLE (List<User>)
     public List<User> getUsersByRole(String role) {
@@ -72,7 +80,12 @@ public class UserDAO {
     
     // Insert User
     public boolean insertUser(User user) {
-        String query = "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String query = """
+            INSERT INTO users
+            (idUser, fullName, email, password, phone, address, role)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """;
+
         PreparedStatement ps = connect.prepareStatement(query);
 
         try {
@@ -82,24 +95,8 @@ public class UserDAO {
             ps.setString(4, user.getPassword());
             ps.setString(5, user.getPhone());
             ps.setString(6, user.getAddress());
-            ps.setDouble(7, 0); // balance awal
-            ps.setString(8, user.getRole());
+            ps.setString(7, user.getRole());
 
-            return ps.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-    
-    // UPDATE BALANCE
-    public boolean updateBalance(String idUser, double newBalance) {
-        String query = "UPDATE users SET balance = ? WHERE idUser = ?";
-        PreparedStatement ps = connect.prepareStatement(query);
-
-        try {
-            ps.setDouble(1, newBalance);
-            ps.setString(2, idUser);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -109,6 +106,23 @@ public class UserDAO {
 
     // HELPER METHOD (VERY IMPORTANT)
     private User mapResultSetToUser(ResultSet rs) throws SQLException {
+
+        String role = rs.getString("role");
+
+        if ("Customer".equalsIgnoreCase(role)) {
+            Customer c = new Customer();
+            c.setIdUser(rs.getString("idUser"));
+            c.setFullName(rs.getString("fullName"));
+            c.setEmail(rs.getString("email"));
+            c.setPassword(rs.getString("password"));
+            c.setPhone(rs.getString("phone"));
+            c.setAddress(rs.getString("address"));
+            c.setRole(role);
+            c.setBalance(rs.getDouble("balance")); // from customers table
+            return c;
+        }
+
+        // Admin / Courier
         User user = new User();
         user.setIdUser(rs.getString("idUser"));
         user.setFullName(rs.getString("fullName"));
@@ -116,21 +130,9 @@ public class UserDAO {
         user.setPassword(rs.getString("password"));
         user.setPhone(rs.getString("phone"));
         user.setAddress(rs.getString("address"));
-        user.setRole(rs.getString("role"));
-        
-        if ("Customer".equalsIgnoreCase(rs.getString("role"))) {
-            Customer c = new Customer();
-            c.setIdUser(user.getIdUser());
-            c.setFullName(user.getFullName());
-            c.setEmail(user.getEmail());
-            c.setPassword(user.getPassword());
-            c.setPhone(user.getPhone());
-            c.setAddress(user.getAddress());
-            c.setRole(user.getRole());
-            c.setBalance(rs.getDouble("balance"));
-            return c;
-        }
-
+        user.setRole(role);
         return user;
     }
+
+
 }

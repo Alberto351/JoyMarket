@@ -13,7 +13,7 @@ public class CustomerDAO {
     public boolean insertCustomer(Customer customer) {
 
         String sql = """
-            INSERT INTO customer (idUser, gender, balance)
+            INSERT INTO customers (idUser, gender, balance)
             VALUES (?, ?, ?)
         """;
 
@@ -27,4 +27,19 @@ public class CustomerDAO {
         }
         return false;
     }
+    
+    public boolean updateBalance(String idUser, double newBalance) {
+        String query = "UPDATE customers SET balance = ? WHERE idUser = ?";
+        PreparedStatement ps = connect.prepareStatement(query);
+
+        try {
+            ps.setDouble(1, newBalance);
+            ps.setString(2, idUser);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
 }
