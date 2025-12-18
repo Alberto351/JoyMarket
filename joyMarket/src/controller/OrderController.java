@@ -27,72 +27,44 @@ public class OrderController {
      * DOCX: Customer Checkout
      */
     public boolean checkout(User user, String promoCode) {
-
-        // VALIDASI USER
-        if (user == null) return false;
-
-        // Pastikan user adalah Customer
-        if (!"Customer".equalsIgnoreCase(user.getRole())) {
-            return false;
-        }
+        if (user == null || !"Customer".equalsIgnoreCase(user.getRole())) return false;
 
         Customer customer = (Customer) user;
 
-        // 1. Get cart
+        // 1. Fetch Cart
         Cart cart = cartDAO.getCartByUser(customer.getIdUser());
-        if (cart == null || cart.getItems().isEmpty()) {
-            return false;
-        }
+        if (cart == null || cart.getItems().isEmpty()) return false;
 
-        // 2. Hitung total
+        // 2. Calculate Total
         double total = cartDAO.getCartTotal(customer.getIdUser());
 
-        // 3. Promo validation
+        // 3. Promo Application
         if (promoCode != null && !promoCode.isBlank()) {
-            Promo promo = promoDAO.getValidPromoByCode(promoCode);
-            if (promo == null) {
-                return false;
-            }
+            Promo promo = promoDAO.getValidPromoByCode(promoCode.trim());
+            if (promo == null) return false; // Or handle as "Invalid Code" alert
             total -= promo.getDiscount(total);
             if (total < 0) total = 0;
         }
 
         // 4. Balance check
-        if (customer.getBalance() < total) {
-            return false;
-        }
+        if (customer.getBalance() < total) return false;
 
-        // 5. Create order
+        // 5. Create Order Header
         String orderId = orderDAO.createOrder(customer, total);
-        if (orderId == null) {
-            return false;
-        }
+        if (orderId == null) return false;
 
-        // 6. Insert order items + update stock
+        // 6. Process Items & Update Stock
         for (CartItem item : cart.getItems()) {
-            Product product = item.getProduct();
-            int qty = item.getQuantity();
-
-            orderItemDAO.insertOrderItem(
-                    orderId,
-                    product.getIdProduct(),
-                    qty,
-                    product.getPrice()
-            );
-
-            productDAO.updateStock(
-                    product.getIdProduct(),
-                    product.getStock() - qty
-            );
+            orderItemDAO.insertOrderItem(orderId, item.getProduct().getIdProduct(), item.getQuantity(), item.getProduct().getPrice());
+            productDAO.updateStock(item.getProduct().getIdProduct(), item.getProduct().getStock() - item.getQuantity());
         }
 
-     // 7. Deduct balance
-        customerDAO.updateBalance(
-                customer.getIdUser(),
-                customer.getBalance() - total
-        );
+        // 7. Deduct Balance (Database and Local Object)
+        double newBalance = customer.getBalance() - total;
+        customerDAO.updateBalance(customer.getIdUser(), newBalance);
+        customer.setBalance(newBalance); // IMPORTANT: Update the local object for the UI
 
-        // 8. Clear cart
+        // 8. Clear Cart
         cartDAO.clearCart(customer.getIdUser());
 
         return true;

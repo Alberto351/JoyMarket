@@ -68,6 +68,7 @@ public class Promo {
         if ("Percentage".equalsIgnoreCase(discountType)) {
             return total * (discountValue / 100);
         }
-        return discountValue;
+        // Logic check: Ensure fixed discount isn't more than the total
+        return Math.min(discountValue, total); 
     }
 }

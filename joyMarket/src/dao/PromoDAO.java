@@ -21,7 +21,7 @@ public class PromoDAO {
         """;
 
         PreparedStatement ps = connect.prepareStatement(query);
-
+        
         try {
             ps.setString(1, code);
             ResultSet rs = ps.executeQuery();

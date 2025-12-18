@@ -1,6 +1,7 @@
 package view;
 
 import controller.CartController;
+import controller.OrderController;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -17,6 +18,7 @@ import model.User;
 public class CartView extends MainView {
     private User user;
     private CartController cartController = new CartController();
+    private OrderController orderController = new OrderController();
 
     public CartView(Stage stage, User user) {
         super(stage);
@@ -156,39 +158,51 @@ public class CartView extends MainView {
         }
 
         Customer customer = (Customer) user;
-        double totalCost = calculateTotal(FXCollections.observableArrayList(cartController.getCart(user).getItems()));
-
-        // 1. Check if user has enough balance
-        if (customer.getBalance() < totalCost) {
-            Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("Insufficient Balance");
-            alert.setHeaderText("Payment Failed");
-            alert.setContentText("You need $" + String.format("%.2f", totalCost - customer.getBalance()) + " more. Would you like to Top Up now?");
-            
-            ButtonType btnTopUp = new ButtonType("Go to Top Up");
-            ButtonType btnCancel = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
-            alert.getButtonTypes().setAll(btnTopUp, btnCancel);
-
-            alert.showAndWait().ifPresent(type -> {
-                if (type == btnTopUp) {
-                    new TopUpView(stage, user).show();
-                }
-            });
-            return;
-        }
-
-        // 2. If balance is enough, proceed with transaction
-        // This part should technically deduct the balance in the database and clear the cart
-        boolean success = cartController.clearCart(user); // Or call an OrderController.processOrder
         
-        if (success) {
-            // Deduct balance locally for the current session
-            customer.setBalance(customer.getBalance() - totalCost);
-            alert("Checkout Successful! Your new balance is: $" + String.format("%.2f", customer.getBalance()));
-            new CustomerMainView(stage, user).show();
-        } else {
-            alert("Transaction failed. Please try again later.");
-        }
+        // 1. Ask for Promo Code first (Optional)
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Checkout");
+        dialog.setHeaderText("Apply Promo Code");
+        dialog.setContentText("Please enter a promo code (leave blank if none):");
+
+        dialog.showAndWait().ifPresent(promoCode -> {
+            // 2. Get current cart total to check balance before processing
+            double totalCost = calculateTotal(FXCollections.observableArrayList(cartController.getCart(user).getItems()));
+
+            // 3. Balance Check & Redirect to Top Up
+            if (customer.getBalance() < totalCost) {
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("Insufficient Balance");
+                alert.setHeaderText("Payment Failed");
+                alert.setContentText("You need $" + String.format("%.2f", totalCost - customer.getBalance()) + 
+                                     " more. Would you like to Top Up now?");
+                
+                ButtonType btnTopUp = new ButtonType("Go to Top Up");
+                ButtonType btnCancel = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+                alert.getButtonTypes().setAll(btnTopUp, btnCancel);
+
+                alert.showAndWait().ifPresent(type -> {
+                    if (type == btnTopUp) {
+                        new TopUpView(stage, user).show();
+                    }
+                });
+                return;
+            }
+
+            // 4. Process Full Transaction via OrderController
+            // This handles: Promo validation, Stock reduction, Order creation, and Cart clearing
+            OrderController orderController = new OrderController();
+            boolean success = orderController.checkout(user, promoCode.trim());
+            
+            if (success) {
+                // Success! The Controller updated the Database balance.
+                // We refresh the local object balance and return to the main view.
+                alert("Checkout Successful! Your order has been placed.");
+                new CustomerMainView(stage, user).show();
+            } else {
+                alert("Checkout Failed! Please check if the promo code is valid or if items are still in stock.");
+            }
+        });
     }
 
     private void alert(String message) {
