@@ -11,6 +11,7 @@ public class OrderController {
     private ProductDAO productDAO;
     private PromoDAO promoDAO;
     private UserDAO userDAO;
+    private CustomerDAO customerDAO;
 
     public OrderController() {
         this.cartDAO = new CartDAO();
@@ -19,6 +20,7 @@ public class OrderController {
         this.productDAO = new ProductDAO();
         this.promoDAO = new PromoDAO();
         this.userDAO = new UserDAO();
+        this.customerDAO = new CustomerDAO();
     }
 
     /**
@@ -84,8 +86,8 @@ public class OrderController {
             );
         }
 
-        // 7. Deduct balance
-        userDAO.updateBalance(
+     // 7. Deduct balance
+        customerDAO.updateBalance(
                 customer.getIdUser(),
                 customer.getBalance() - total
         );

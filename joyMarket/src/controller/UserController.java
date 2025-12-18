@@ -1,15 +1,19 @@
 package controller;
 
+import dao.CustomerDAO;
 import dao.UserDAO;
 import model.Customer;
 import model.User;
 
 public class UserController {
 
+	private CustomerDAO customerDAO;
     private UserDAO userDAO;
 
     public UserController() {
         userDAO = new UserDAO();
+        customerDAO = new CustomerDAO();
+
     }
 
     // Login
@@ -88,9 +92,19 @@ public class UserController {
         customer.setBalance(0);
         customer.setRole("Customer");
 
-        boolean success = userDAO.insertUser(customer);
+     // Insert into USERS table
+        boolean userInserted = userDAO.insertUser(customer);
+        if (!userInserted) {
+            return "Register failed (user)";
+        }
 
-        return success ? "Success" : "Register failed";
+        // Insert into CUSTOMER table
+        boolean customerInserted = customerDAO.insertCustomer(customer);
+        if (!customerInserted) {
+            return "Register failed (customer)";
+        }
+
+        return "Success";
     }
     
     // Generate ID
@@ -111,7 +125,7 @@ public class UserController {
 
         double newBalance = customer.getBalance() + amount;
 
-        boolean updated = userDAO.updateBalance(
+        boolean updated = customerDAO.updateBalance(
                 customer.getIdUser(),
                 newBalance
         );
