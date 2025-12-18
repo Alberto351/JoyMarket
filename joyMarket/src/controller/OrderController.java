@@ -26,44 +26,51 @@ public class OrderController {
      */
     public boolean checkout(User user, String promoCode) {
 
+        // VALIDASI USER
         if (user == null) return false;
 
-        // 1. Get cart and total FROM DB
-        Cart cart = cartDAO.getCartByUser(user.getIdUser());
+        // Pastikan user adalah Customer
+        if (!"Customer".equalsIgnoreCase(user.getRole())) {
+            return false;
+        }
+
+        Customer customer = (Customer) user;
+
+        // 1. Get cart
+        Cart cart = cartDAO.getCartByUser(customer.getIdUser());
         if (cart == null || cart.getItems().isEmpty()) {
             return false;
         }
 
-        double total = cartDAO.getCartTotal(user.getIdUser());
+        // 2. Hitung total
+        double total = cartDAO.getCartTotal(customer.getIdUser());
 
-        // 2. Promo validation (DOCX rule)
+        // 3. Promo validation
         if (promoCode != null && !promoCode.isBlank()) {
-            Promo promo = promoDAO.getPromoByCode(promoCode);
+            Promo promo = promoDAO.getValidPromoByCode(promoCode);
             if (promo == null) {
-                return false; // promo must exist
+                return false;
             }
-            total -= promo.getDiscount();
+            total -= promo.getDiscount(total);
             if (total < 0) total = 0;
         }
 
-        // 3. Balance check (DOCX rule)
-        if (user.getBalance() < total) {
+        // 4. Balance check
+        if (customer.getBalance() < total) {
             return false;
         }
 
-        // 4. Create order header
-        String orderId = orderDAO.createOrder(user, total);
+        // 5. Create order
+        String orderId = orderDAO.createOrder(customer, total);
         if (orderId == null) {
             return false;
         }
 
-        // 5. Insert order items + update stock
+        // 6. Insert order items + update stock
         for (CartItem item : cart.getItems()) {
-
             Product product = item.getProduct();
             int qty = item.getQuantity();
 
-            // Insert order item
             orderItemDAO.insertOrderItem(
                     orderId,
                     product.getIdProduct(),
@@ -71,19 +78,20 @@ public class OrderController {
                     product.getPrice()
             );
 
-            // Reduce stock
-            int newStock = product.getStock() - qty;
-            productDAO.updateStock(product.getIdProduct(), newStock);
+            productDAO.updateStock(
+                    product.getIdProduct(),
+                    product.getStock() - qty
+            );
         }
 
-        // 6. Deduct user balance
+        // 7. Deduct balance
         userDAO.updateBalance(
-                user.getIdUser(),
-                user.getBalance() - total
+                customer.getIdUser(),
+                customer.getBalance() - total
         );
 
-        // 7. Clear cart
-        cartDAO.clearCart(user.getIdUser());
+        // 8. Clear cart
+        cartDAO.clearCart(customer.getIdUser());
 
         return true;
     }

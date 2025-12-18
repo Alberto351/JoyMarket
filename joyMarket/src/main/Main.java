@@ -1,24 +1,17 @@
 package main;
 
-import controller.UserController;
-import model.User;
+import javafx.application.Application;
+import javafx.stage.Stage;
+import view.LoginView;
 
-public class Main {
-	
-	public Main() {
-		UserController uc = new UserController();
-		User user = uc.login("admin@gmail.com", "admin123");
+public class Main extends Application {
 
-		if (user != null) {
-		    System.out.println("Login success as " + user.getRole());
-		} else {
-		    System.out.println("Login failed");
-		}
+    @Override
+    public void start(Stage primaryStage) {
+        new LoginView(primaryStage).show();
+    }
 
-	}
-
-	public static void main(String[] args) {
-		new Main();
-	}
-
+    public static void main(String[] args) {
+        launch(args);
+    }
 }

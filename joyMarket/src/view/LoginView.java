@@ -5,6 +5,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import model.User;
 
@@ -33,8 +34,16 @@ public class LoginView extends MainView {
 
         Label lblError = new Label();
         lblError.setStyle("-fx-text-fill: red;");
-
+        
         Button btnLogin = new Button("Login");
+        Button btnRegister = new Button("Register");
+        
+        HBox buttonBox = new HBox(10, btnLogin, btnRegister);
+        buttonBox.setAlignment(Pos.CENTER_LEFT);
+        
+        btnRegister.setOnAction(e -> {
+            new RegisterView(stage).show();
+        });
 
         btnLogin.setOnAction(e -> {
             User user = userController.login(
@@ -49,28 +58,32 @@ public class LoginView extends MainView {
 
             // Redirect based on role
             switch (user.getRole()) {
-                case "Admin":
-                    new AdminView(stage, user).show();
-                    break;
-                case "Customer":
-                    new CustomerView(stage, user).show();
-                    break;
-                case "Courier":
-                    new CourierView(stage, user).show();
-                    break;
-                default:
-                    lblError.setText("Unknown role");
+            	case "Admin":
+            		new AdminView(stage, user).show();
+            		break;
+            	case "Customer":
+            		new CustomerMainView(stage, user).show(); // ✅ FIX
+            		break;
+            	case "Courier":
+            		new CourierView(stage, user).show();
+            		break;
+            	default:
+            		lblError.setText("Unknown role");
             }
-        });
 
+        });
+        
         grid.add(lblTitle, 0, 0, 2, 1);
         grid.add(new Label("Email"), 0, 1);
         grid.add(txtEmail, 1, 1);
         grid.add(new Label("Password"), 0, 2);
         grid.add(txtPassword, 1, 2);
-        grid.add(btnLogin, 0, 3, 2, 1);
         grid.add(lblError, 0, 4, 2, 1);
+        grid.add(buttonBox, 0, 3, 2, 1);
 
+
+        
+        
         stage.setScene(new Scene(grid, 400, 300));
         stage.setTitle("JoymarKet");
         stage.show();

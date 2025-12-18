@@ -1,20 +1,30 @@
 package dao;
 
-import model.Order;
+import model.User;
 import utils.Connect;
 
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.Date;
+import java.time.LocalDate;
+import java.util.UUID;
 
 public class OrderDAO {
 
     private Connect connect = Connect.getInstance();
+    
+    /**
+     * Create new order (Order Header)
+     * Called during checkout process
+     *
+     * @return idOrder if success, null if failed
+     */
+    public String createOrder(User user, double totalPrice) {
 
-    // CREATE ORDER
-    public boolean createOrder(Order order) {
+        String idOrder = generateOrderId();
+        String status = "Pending";
+        Date orderDate = Date.valueOf(LocalDate.now());
+
         String query = """
             INSERT INTO orders (idOrder, idUser, status, orderDate, totalPrice)
             VALUES (?, ?, ?, ?, ?)
@@ -23,61 +33,26 @@ public class OrderDAO {
         PreparedStatement ps = connect.prepareStatement(query);
 
         try {
-            ps.setString(1, order.getIdOrder());
-            ps.setString(2, order.getIdUser());
-            ps.setString(3, order.getStatus());
-            ps.setDate(4, new java.sql.Date(order.getOrderDate().getTime())); // LocalDate
-            ps.setDouble(5, order.getTotalPrice());
-            return ps.executeUpdate() > 0;
+            ps.setString(1, idOrder);
+            ps.setString(2, user.getIdUser());
+            ps.setString(3, status);
+            ps.setDate(4, orderDate);
+            ps.setDouble(5, totalPrice);
+
+            int affectedRows = ps.executeUpdate();
+            return affectedRows > 0 ? idOrder : null;
+            
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return false;
+        
+        return null;
     }
-
-    // GET ORDERS BY USER
-    public List<Order> getOrdersByUser(String idUser) {
-        List<Order> orders = new ArrayList<>();
-        String query = "SELECT * FROM orders WHERE idUser = ?";
-
-        PreparedStatement ps = connect.prepareStatement(query);
-
-        try {
-            ps.setString(1, idUser);
-            ResultSet rs = ps.executeQuery();
-
-            while (rs.next()) {
-                orders.add(mapResultSetToOrder(rs));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return orders;
-    }
-
-    // UPDATE ORDER STATUS
-    public boolean updateOrderStatus(String idOrder, String status) {
-        String query = "UPDATE orders SET status = ? WHERE idOrder = ?";
-        PreparedStatement ps = connect.prepareStatement(query);
-
-        try {
-            ps.setString(1, status);
-            ps.setString(2, idOrder);
-            return ps.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    // HELPER
-    private Order mapResultSetToOrder(ResultSet rs) throws SQLException {
-        Order order = new Order();
-        order.setIdOrder(rs.getString("idOrder"));
-        order.setIdUser(rs.getString("idUser"));
-        order.setStatus(rs.getString("status"));
-        order.setOrderDate(rs.getDate("orderDate"));
-        order.setTotalPrice(rs.getDouble("totalPrice"));
-        return order;
+    /**
+     * Generate unique Order ID
+     * Example: ORD-8F3A2C
+     */
+    private String generateOrderId() {
+        return "ORD-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
     }
 }

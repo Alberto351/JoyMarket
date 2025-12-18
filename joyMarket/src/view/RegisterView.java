@@ -29,7 +29,6 @@ public class RegisterView extends MainView {
         Label lblTitle = new Label("Customer Register");
         lblTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
 
-        TextField txtId = new TextField();
         TextField txtName = new TextField();
         TextField txtEmail = new TextField();
         txtEmail.setPromptText("must end with @gmail.com");
@@ -62,7 +61,6 @@ public class RegisterView extends MainView {
                     rbFemale.isSelected() ? "Female" : null;
 
             String result = uc.validateRegister(
-                    txtId.getText(),
                     txtName.getText(),
                     txtEmail.getText(),
                     txtPass.getText(),
@@ -87,9 +85,6 @@ public class RegisterView extends MainView {
 
         // Layout
         grid.add(lblTitle, 0, 0, 2, 1);
-
-        grid.add(new Label("Customer ID:"), 0, 1);
-        grid.add(txtId, 1, 1);
 
         grid.add(new Label("Full Name:"), 0, 2);
         grid.add(txtName, 1, 2);
