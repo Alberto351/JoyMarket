@@ -1,5 +1,7 @@
 package view;
 
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -19,27 +21,26 @@ public class CourierView extends MainView {
     @Override
     public void show() {
 
-        Label lblTitle = new Label("Courier Menu");
+        Label lblTitle = new Label("Courier Dashboard");
         lblTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
 
-        Label lblName = new Label("Welcome, " + user.getFullName());
-
-        Label lblInfo = new Label("Delivery features not implemented yet");
+        Label lblWelcome = new Label("Welcome, " + user.getFullName());
+        Label lblInfo = new Label("Delivery feature is not implemented yet.");
 
         Button btnLogout = new Button("Logout");
         btnLogout.setOnAction(e ->
                 new LoginView(stage).show()
         );
 
-        VBox root = new VBox(10,
+        VBox root = new VBox(15,
                 lblTitle,
-                lblName,
+                lblWelcome,
                 lblInfo,
                 btnLogout
         );
 
-        root.setStyle("-fx-padding: 20;");
-        root.setAlignment(javafx.geometry.Pos.CENTER);
+        root.setAlignment(Pos.CENTER);
+        root.setPadding(new Insets(20));
 
         stage.setScene(new Scene(root, 350, 250));
         stage.setTitle("JoymarKet - Courier");

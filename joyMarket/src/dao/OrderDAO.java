@@ -48,6 +48,20 @@ public class OrderDAO {
         
         return null;
     }
+    
+    public boolean assignOrder(String idOrder, String idCourier) {
+        String query = "UPDATE orders SET idCourier = ?, status = 'On Delivery' WHERE idOrder = ?";
+        
+        try (PreparedStatement ps = connect.prepareStatement(query)) {
+            ps.setString(1, idCourier);
+            ps.setString(2, idOrder);
+            
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
     /**
      * Generate unique Order ID
      * Example: ORD-8F3A2C
